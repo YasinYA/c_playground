@@ -12,7 +12,7 @@ int main() {
   int foldingLen = 10, idx = 10;
   int j = 0, len = strlen(str), tmpLen = len / foldingLen;
 
-  char *tmp = (char *) malloc(tmpLen * sizeof(char));
+  char *tmp = (char *) malloc((tmpLen + len) * sizeof(char));
 
   for(int i = 0; i < len; i++, j++) {
     tmp[j] = str[i];
