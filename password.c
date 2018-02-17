@@ -8,16 +8,17 @@
 
 
 #define PASSWORD_LENGTH  10
+#define LABEL_LENGTH 10
 
 char * randomData();
-void generatePassword(char *fName, char *desc);
+void generatePassword(char *fName, char *label);
 void listPasswords(char *fName);
 
 
 struct Entry {
   char password[PASSWORD_LENGTH + 1];
   char madeTime[26];
-  char description[100];
+  char label[LABEL_LENGTH];
 };
 
 int main(int argc, char **argv)
@@ -27,8 +28,11 @@ int main(int argc, char **argv)
   // check if extra arguments are passed
   if(argc == 1) {
     printf("No Extra arguments are passed so the program is gonna terminate");
-    exit(1);
+    exit(EXIT_FAILURE);
   }
+
+  // chdir to home
+  chdir(getenv("HOME"));
 
   // check the what action user want
   if(strcmp(argv[1], "generate") == 0) {
@@ -36,6 +40,14 @@ int main(int argc, char **argv)
     // rand() needs to reset the seed of the generator and srand() does that
     // calling once on main instead of calling srand() each randomData() gets called
     srand(time(0));
+
+    // check if label is passed
+    if(!argv[2]) {
+
+      // assign the label to default value
+      argv[2] = "No Label";
+
+    }
 
     generatePassword(fileName, argv[2]);
 
@@ -46,11 +58,11 @@ int main(int argc, char **argv)
   } else {
 
     printf("Unknown option\n");
-    exit(1);
+    exit(EXIT_FAILURE);
 
   }
 
-  return 0;
+  return EXIT_SUCCESS;
 
 }
 
@@ -83,16 +95,14 @@ char * randomData()
 
   } else {
     printf("Something went wrong \n");
-    exit(1);
+    exit(EXIT_FAILURE);
   }
 
   return randomString;
 }
 
-void generatePassword(char *fName, char *desc)
+void generatePassword(char *fName, char *label)
 {
-   // chdir to home
-  chdir(getenv("HOME"));
 
   // current time
   time_t currentTime;
@@ -100,27 +110,13 @@ void generatePassword(char *fName, char *desc)
   char *strTime = ctime(&currentTime);
 
   struct Entry record;
-
   char *password = randomData();
-  int len = strlen(password), i, j, x;
-  int timeLen = strlen(strTime), descLen = strlen(desc);
 
-  for(i = 0; i < len; i++) {
-    record.password[i] = password[i];
-  }
-  record.password[i] = '\0';
+  // assign the values
 
-  for(j = 0; j < timeLen; j++) {
-    record.madeTime[j] = strTime[j];
-  }
-
-  record.madeTime[j] = '\0';
-
-  for(x = 0; x < descLen; x++){
-    record.description[x] = desc[x];
-  }
-
-  record.description[x] = '\0';
+  strncpy(record.password, password, PASSWORD_LENGTH + 1);
+  strncpy(record.madeTime, strTime, 26);
+  strncpy(record.label, label, LABEL_LENGTH);
 
   FILE *fw;
 
@@ -129,12 +125,13 @@ void generatePassword(char *fName, char *desc)
 
   if(!fw) {
     printf("Error has happened while opening the file\n");
+    exit(EXIT_FAILURE);
   }
 
   // write to the file
   fwrite(&record, sizeof(struct Entry), 1, fw);
 
-  printf("password: %s, madetime: %s, description: %s \n", record.password, record.madeTime, record.description);
+  printf("password: %s, madetime: %s, description: %s \n", record.password, record.madeTime, record.label);
 
   // close the file
   fclose(fw);
@@ -146,21 +143,18 @@ void generatePassword(char *fName, char *desc)
 
 void listPasswords(char *fName)
 {
-   // chdir to home
-  chdir(getenv("HOME"));
-
   FILE *fr = fopen(fName, "rb");
 
   if(!fr) {
     printf("Error has happened while opening the file\n");
-    exit(1);
+    exit(EXIT_FAILURE);
   }
 
   struct Entry line;
   size_t rc;
 
   while( ( rc = fread(&line, sizeof(struct Entry), 1, fr) ) ) {
-    printf("password : %s, made time: %s, description: %s \n", line.password, line.madeTime, line.description);
+    printf("password : %s, made time: %s, description: %s \n", line.password, line.madeTime, line.label);
   }
 
   fclose(fr);
